@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script>
+
+	var svg = d3.select("body").append("svg")
+				.attr("width", 1000)
+				.attr("height", 1000)
+			.append("g");
+
+	var json;
+
+	d3.json("s1.json", function(error, root) {
+		if (error) console.log("error");
+
+		
+
+		var genInfo = root["http://asn.jesandco.org/resources/D10003FB"];
+		delete root["http://asn.jesandco.org/resources/D10003FB"];
+		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];
+
+		var jsonArray = [];
+		for (x in root) {
+			jsonArray.push(x);
+		}
+
+		console.log(jsonArray); 
+		var circle = svg.selectAll("circle")
+				.data(jsonArray)
+			.enter()
+			.append("circle")
+				.attr("r", 10)
+				.style("fill", "red")
+				.attr("cx", function(d,i){ return i*20})
+				.attr("cy", function(d,i){return i*10});
+
+
+		console.log(root);
+	});
+	</script>
+</body>
+</html>
