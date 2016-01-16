@@ -9,36 +9,139 @@
 	var svg = d3.select("body").append("svg")
 				.attr("width", 1000)
 				.attr("height", 1000)
-			.append("g");
+			.append("g")
+				.attr("transform", "translate(480,480)");
 
 	var json;
+
+	
+
+		
 
 	d3.json("s1.json", function(error, root) {
 		if (error) console.log("error");
 
-		
+		var focus = root;
+			
+
+		/*var pack = d3.layout.pack()
+		.padding(2)
+		.size([700,700])
+		.value(function(d){
+			if (d[0].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel")){
+				switch(d[0]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]){
+					case "Standard":
+						return 5*Math.random()*1000;
+					case "Cluster":
+						return 5*Math.random()*10000;
+					case "Domain" :
+						return 5*Math.random()*100000;
+					case "Component":
+						return 5*Math.random()*1000000;
+				}
+			}
+		});*/
+
+		svg.append("circle")
+			.attr("r", "30px")
+			.attr("stroke", "green")
+			.attr("stroke-width", "1.5px")
+			.attr("fill", "#fff")
+			.on("click", function(d) {displayDomains()});
 
 		var genInfo = root["http://asn.jesandco.org/resources/D10003FB"];
 		delete root["http://asn.jesandco.org/resources/D10003FB"];
 		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];
 
-		var jsonArray = [];
+		var Domains = [];
 		for (x in root) {
-			jsonArray.push(x);
+			/*
+			if (root[x].hasOwnProperty("http://purl.org/dc/terms/description")){
+				root[x]["name"] = root[x]["http://purl.org/dc/terms/description"][0]["value"];
+			}
+			root[x]["children"] = [];
+			if (root[x].hasOwnProperty("http://purl.org/gem/qualifiers/hasChild")){
+				for (i in root[x]["http://purl.org/gem/qualifiers/hasChild"]){
+					root[x]["children"].push(root[x]["http://purl.org/gem/qualifiers/hasChild"][i]["value"]);
+				}
+			}*/
+			
+			if (root[x].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel") && root[x]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]=="Domain"){
+					Domains.push(x);
+			}
 		}
 
-		console.log(jsonArray); 
-		var circle = svg.selectAll("circle")
-				.data(jsonArray)
-			.enter()
-			.append("circle")
-				.attr("r", 10)
-				.style("fill", "red")
-				.attr("cx", function(d,i){ return i*20})
-				.attr("cy", function(d,i){return i*10});
+		/*for (x in root){
+			temp = [];
+			temp.push(root[x]);
+			nodeArray.push(pack.nodes(temp));
+		}*/
+		
+		console.log(Domains);
 
 
-		console.log(root);
+		function displayDomains(){
+			var node = svg.selectAll("g")
+					.data(Domains)					
+					.enter()
+					.append("g")
+						.attr("transform", function(d,i) {
+							return "rotate("+ 360*i/Domains.length + ")translate(90)";
+						})
+						.attr("class", "Level2");
+
+
+			node.append("circle")
+				.attr("r", 4.5)
+				.attr("stroke", "blue")
+				.attr("stroke-width", "1.5px")
+				.attr("fill", "#fff")
+				.on("click", function(d,i) {displayInner(d,3,360*i/Domains.length)});
+
+			/*node.append("text")
+				.attr("dy", ".31em")
+				.attr("text-anchor", "start")
+				.attr("transform", "translate(8)")
+				.text(function(d,i){
+					return root[d]["http://purl.org/dc/terms/description"][0]["value"];
+				});*/
+			}
+
+		function displayInner(parent, coeff, baseRotate) {
+			var children = root[parent]["http://purl.org/gem/qualifiers/hasChild"];
+			console.log(children)
+			var node2 = svg.selectAll("Level" + coeff)
+				.data(children)
+				.enter()
+				.append("g")
+					.attr("transform", function(d,i) {
+						console.log(d);
+						return "rotate(" + (baseRotate - (children.length/2 - i)* (coeff-1) * 0.8) + ")translate(" + 90*coeff + ")";
+					})
+
+			node2.append("circle")
+				.attr("r",4.5)
+				.attr("stroke", "blue")
+				.attr("stroke-width", "1.5px")
+				.attr("fill", "#fff")
+				.on("click", function(d,i) {displayInner(d["value"], coeff + 1, baseRotate-(children.length/2 - i)*(coeff-1)*0.8)});
+
+		}
+					/*if (root[d].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel")){
+						switch(root[d]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]){
+							case "Standard":
+								return 5;
+							case "Cluster":
+								return 10;
+							case "Domain" :
+								return 20;
+							case "Component":
+								return 2;
+						};
+						return 10;*/
+						
+
+
 	});
 	</script>
 </body>
