@@ -78,7 +78,7 @@
 		}*/
 		
 		console.log(Domains);
-
+		var nodeDistance = 180/Domains.length;
 
 		function displayDomains(){
 			var node = svg.selectAll("g")
@@ -87,7 +87,7 @@
 
 			var backgrounds = node.append("g")
 						.attr("transform", function(d,i) {
-							return "rotate("+ 360*i/Domains.length + ")translate(90)";
+							return "rotate("+ nodeDistance*2*i + ")translate(90)";
 						})
 						.attr("class", "Level2");
 
@@ -98,21 +98,21 @@
 				.attr("stroke-width", "1.5px")
 				.attr("fill", "#fff")
 				.on("click", function(d,i) {
-					shiftCircles(d,i);
-					displayInner(d,3,360*i/Domains.length);
+					shiftCircles(d,i,nodeDistance*2*i);
+					displayInner(d,3,nodeDistance*2*i);
 				});
 
-			function shiftCircles(d,i) {
+			function shiftCircles(d,i,baseRotate) {
 				var filterCondition = d;
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)})
-					.attr("r", 10);
+					.attr("r", 5);
 				var others = circles.filter(function(d){return !(d===filterCondition)})
 					.attr("r", 2.25)
 					.on("click", function(d,i){displayDomains()});
 				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)})
 					.attr("transform", function(d,i){
-						return "rotate(" + (180*i/Domains.length + 90 + 180*coeff) + ")translate(90)";
+						return "rotate(" + (nodeDistance*i +baseRotate + 90) + ")translate(90)";
 					})
 				}
 			/*node.append("text")
@@ -134,17 +134,18 @@
 				.append("g")
 					.attr("transform", function(d,i) {
 						console.log(children.length/2);
-						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *(coeff -1) * 5) + ")translate(" + 90*coeff + ")";
-					})
+						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
+					});
 
 			node2.append("circle")
-				.attr("r",10)
+				.attr("r",5)
 				.attr("stroke", "blue")
 				.attr("stroke-width", "1.5px")
 				.attr("fill", "#fff")
 				.on("click", function(d,i) {
 
-					displayInner(d["value"], coeff + 1, baseRotate-(children.length/2 - i)*(coeff-1)*0.8)});
+					displayInner(d["value"], coeff + 1, baseRotate-(children.length/2 -0.5- i)*10);
+				});
 
 			}
 
