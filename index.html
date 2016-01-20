@@ -95,26 +95,38 @@
 
 
 			var circles = backgrounds.append("circle")
-				.attr("r", 4.5)
-				.attr("stroke", "blue")
-				.attr("stroke-width", "1.5px")
-				.attr("fill", "#fff")
 				.on("click", function(d,i) {
 					shiftCircles(d,i,nodeDistance*2*i);
 					displayInner(d,3,nodeDistance*2*i);
 				});
+
+
+			circles
+				.attr("fill", "#fff")
+				.attr("r",0)
+				.transition()
+				.duration(1500)	
+				.attr("r",4.5)
+				.attr("stroke", "blue")
+				.attr("stroke-width",0)	
+				.attr("stroke-width", "1.5px")
+				
+				
+
 
 			function shiftCircles(d,i,baseRotate) {
 				beginAngle = baseRotate + 90;
 				endAngle = nodeDistance * (Domains.length -2) + baseRotate + 90;
 				var filterCondition = d;
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
-				var thisCircle = circles.filter(function(d){return (d===filterCondition)})
+				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
+					.duration(1500)
 					.attr("r", 5);
-				var others = circles.filter(function(d){return !(d===filterCondition)})
-					.attr("r", 2.25)
-					.on("click", function(d,i){displayDomains()});
-				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)})
+				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
+					.duration(1500)
+					.attr("r", 2.25);
+				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)}).transition()
+					.duration(1500)
 					.attr("transform", function(d,i){
 						return "rotate(" + (nodeDistance*i +baseRotate + 90) + ")translate(90)";
 					})
@@ -137,28 +149,41 @@
 				.enter()
 
 
+			
+			var unnecessary = svg.selectAll(".Level" + (coeff))
+				.remove();
+			console.log("unnecessary");
+			console.log(unnecessary);
+
+
 			var backgrounds = node2.append("g")
+
+			backgrounds.transition().duration(1500)
 					.attr("transform", function(d,i) {
-						console.log(children.length/2);
 						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
 					})
 					.attr("class", "Level" + coeff);
 
 			var circles = backgrounds.append("circle")
+					.attr("fill", "#fff")
+					.attr("stroke", "blue")
+					.on("click", function(d,i) {
+							shiftCircles(d,i);
+							displayInner(d["value"], coeff + 1, baseRotate);
+						});
+
+			circles.transition().duration(1500)
 				.attr("r",5)
-				.attr("stroke", "blue")
-				.attr("stroke-width", "1.5px")
-				.attr("fill", "#fff")
-				.on("click", function(d,i) {
-					shiftCircles(d,i);
-					displayInner(d["value"], coeff + 1, baseRotate);
-				});
+				.attr("stroke-width", "1.5px");
+				
+				
 
 
 			function shiftCircles(d,i){
 				var filterCondition = d;
 				var thisIndex = i;
-				var others = backgrounds
+				var others = backgrounds.transition()
+								.duration(1500)
 								.attr("transform", function(d,i){
 									if (i > thisIndex){
 										return "rotate(" + (beginAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
@@ -173,7 +198,10 @@
 
 				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
 									.attr("r", 2.25)
-									.attr("stroke", "red");
+									.attr("stroke", "red")
+									.on("click",function(d,i){
+										console.log(d);
+										displayInner(d["value"],coeff+1,baseRotate)});
 								
 				}
 			}
