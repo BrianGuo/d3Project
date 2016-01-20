@@ -79,6 +79,8 @@
 		
 		console.log(Domains);
 		var nodeDistance = 180/Domains.length;
+		var endAngle = 0;
+		var beginAngle = 0;
 
 		function displayDomains(){
 			var node = svg.selectAll("g")
@@ -103,6 +105,8 @@
 				});
 
 			function shiftCircles(d,i,baseRotate) {
+				beginAngle = baseRotate + 90;
+				endAngle = nodeDistance * (Domains.length -2) + baseRotate + 90;
 				var filterCondition = d;
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)})
@@ -131,26 +135,47 @@
 			var node2 = svg.selectAll("Level" + coeff)
 				.data(children)
 				.enter()
-				.append("g")
+
+
+			var backgrounds = node2.append("g")
 					.attr("transform", function(d,i) {
 						console.log(children.length/2);
 						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
-					});
+					})
+					.attr("class", "Level" + coeff);
 
-			node2.append("circle")
+			var circles = backgrounds.append("circle")
 				.attr("r",5)
 				.attr("stroke", "blue")
 				.attr("stroke-width", "1.5px")
 				.attr("fill", "#fff")
 				.on("click", function(d,i) {
-
-					displayInner(d["value"], coeff + 1, baseRotate-(children.length/2 -0.5- i)*10);
+					shiftCircles(d,i);
+					displayInner(d["value"], coeff + 1, baseRotate);
 				});
 
-			}
 
 			function shiftCircles(d,i){
+				var filterCondition = d;
+				var thisIndex = i;
+				var others = backgrounds
+								.attr("transform", function(d,i){
+									if (i > thisIndex){
+										return "rotate(" + (beginAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
+									}
+									else if (i < thisIndex){
+										return "rotate(" + (endAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
+									}
+									else{
+										return "rotate(" + baseRotate + ")translate(" + (90*(coeff-1)) + ")";
+									}
+								});
 
+				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
+									.attr("r", 2.25)
+									.attr("stroke", "red");
+								
+				}
 			}
 					/*if (root[d].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel")){
 						switch(root[d]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]){
