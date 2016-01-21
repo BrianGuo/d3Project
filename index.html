@@ -9,12 +9,10 @@
 	var svg = d3.select("body").append("svg")
 				.attr("width", 1000)
 				.attr("height", 1000)
-			.append("g")
+				.append("g")
 				.attr("transform", "translate(480,480)");
 
 	var json;
-
-	
 
 		
 
@@ -49,6 +47,8 @@
 			.attr("fill", "#fff")
 			.on("click", function(d) {displayDomains()});
 
+					
+
 		var genInfo = root["http://asn.jesandco.org/resources/D10003FB"];
 		delete root["http://asn.jesandco.org/resources/D10003FB"];
 		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];
@@ -82,6 +82,8 @@
 		var endAngle = 0;
 		var beginAngle = 0;
 
+
+
 		function displayDomains(){
 			var node = svg.selectAll("g")
 					.data(Domains)					
@@ -110,8 +112,18 @@
 				.attr("stroke", "blue")
 				.attr("stroke-width",0)	
 				.attr("stroke-width", "1.5px")
-				
-				
+
+			/*function addLines(d,i){
+				var line = d3.svg.line()
+				    .x(function(d) { return x(...); })
+				    .y(function(d) { return y(...); })
+				    .interpolate("linear");
+
+				svg.append("path")
+					.attr("class", "line")
+					.attr("d", function(d){return line(data)})
+					.style("stroke","#000");
+			}*/
 
 
 			function shiftCircles(d,i,baseRotate) {
