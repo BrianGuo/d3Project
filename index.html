@@ -6,20 +6,22 @@
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
 
-	var svg = d3.select("body").append("svg")
+	
+
+		
+	function loadCollection(collection, shiftBy){
+		var svg = d3.select("body").append("svg")
 				.attr("width", 1000)
 				.attr("height", 1000)
 				.append("g")
-				.attr("transform", "translate(480,480)");
+					.attr("transform", "translate(" + shiftBy + "," + shiftBy + ")");
 
-	var json;
+		var json;
 
-		
+		d3.json(collection, function(error, root) {
+			if (error) console.log("error");
 
-	d3.json("s1.json", function(error, root) {
-		if (error) console.log("error");
-
-		var focus = root;
+			var focus = root;
 			
 
 		/*var pack = d3.layout.pack()
@@ -49,9 +51,9 @@
 
 					
 
-		var genInfo = root["http://asn.jesandco.org/resources/D10003FB"];
+		/*var genInfo = root["http://asn.jesandco.org/resources/D10003FB"];
 		delete root["http://asn.jesandco.org/resources/D10003FB"];
-		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];
+		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];*/
 
 		var Domains = [];
 		for (x in root) {
@@ -78,12 +80,14 @@
 		}*/
 		
 		console.log(Domains);
-		var nodeDistance = 180/Domains.length;
+
+		var nodeDistance = 180/(Domains.length-1);
 		var endAngle = 0;
 		var beginAngle = 0;
 
 
-
+		var layerAngles = [0,0,0,0]
+		var colorNodes = ["blue","red","green","black"]
 		function displayDomains(){
 			var node = svg.selectAll("g")
 					.data(Domains)					
@@ -93,7 +97,7 @@
 						.attr("transform", function(d,i) {
 							return "rotate("+ nodeDistance*2*i + ")translate(90)";
 						})
-						.attr("class", "Level2");
+						.attr("Level", 2);
 
 
 			var circles = backgrounds.append("circle")
@@ -102,6 +106,10 @@
 					displayInner(d,3,nodeDistance*2*i);
 				});
 
+			circles.append("title")
+					.text(function(d){
+						return root[d]["http://purl.org/dc/terms/description"][0]["value"];
+					})
 
 			circles
 				.attr("fill", "#fff")
@@ -127,13 +135,16 @@
 
 
 			function shiftCircles(d,i,baseRotate) {
-				beginAngle = baseRotate + 90;
-				endAngle = nodeDistance * (Domains.length -2) + baseRotate + 90;
+				layerAngles[0] = {beginAngle : baseRotate + 90, endAngle : nodeDistance * (Domains.length -2) + baseRotate + 90};
 				var filterCondition = d;
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 5);
+				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)}).transition().duration(1500)
+					.attr("transform", function(d,i) {
+						return "rotate(" + baseRotate + ")translate(120)";
+					});
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 2.25);
@@ -162,59 +173,95 @@
 
 
 			
-			var unnecessary = svg.selectAll(".Level" + (coeff))
+			var unnecessary = svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > coeff-1})
 				.remove();
-			console.log("unnecessary");
-			console.log(unnecessary);
+			
 
 
-			var backgrounds = node2.append("g")
+			var backgrounds = node2.append("g");
 
 			backgrounds.transition().duration(1500)
 					.attr("transform", function(d,i) {
 						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
 					})
-					.attr("class", "Level" + coeff);
+					.attr("Level", coeff);
 
 			var circles = backgrounds.append("circle")
 					.attr("fill", "#fff")
 					.attr("stroke", "blue")
+					.attr("__data__", function(d){return d})
 					.on("click", function(d,i) {
 							shiftCircles(d,i);
 							displayInner(d["value"], coeff + 1, baseRotate);
 						});
 
-			circles.transition().duration(1500)
+			circles.transition().duration(1000)
 				.attr("r",5)
 				.attr("stroke-width", "1.5px");
+
+			circles.append("title")
+					.text(function(d,i){
+									return root[d["value"]]["http://purl.org/dc/terms/description"][0]["value"];
+								});
+
+			
 				
 				
 
 
 			function shiftCircles(d,i){
-				var filterCondition = d;
+				beginAngle = layerAngles[coeff-3]["beginAngle"];
+				endAngle = layerAngles[coeff-3]["endAngle"];
+				console.log(beginAngle);
+				console.log(endAngle);
 				var thisIndex = i;
+				layerAngles[coeff-2] = {};
+				console.log("length");
+				console.log(backgrounds[0].length);
+				layerAngles[coeff-2].beginAngle = beginAngle+nodeDistance*(thisIndex-(backgrounds[0].length-1));
+				layerAngles[coeff-2].endAngle = endAngle+nodeDistance*thisIndex;
+				var filterCondition = d;
+				
+				console.log(filterCondition);
 				var others = backgrounds.transition()
-								.duration(1500)
+								.duration(800)
 								.attr("transform", function(d,i){
 									if (i > thisIndex){
-										return "rotate(" + (beginAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
+										return "rotate(" + (beginAngle + nodeDistance*(thisIndex-i)) + ")translate(90)";
 									}
 									else if (i < thisIndex){
 										return "rotate(" + (endAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
 									}
 									else{
+										console.log(d);
 										return "rotate(" + baseRotate + ")translate(" + (90*(coeff-1)) + ")";
 									}
+									
 								});
 
+				
+										
+
+				var thisCircle = circles.filter(function(d)	{return (d===filterCondition)})
+									.transition()
+									.duration(1000)
+									.attr("r", 4.5)
+									.attr("stroke", "blue")
+									.attr("__data__", d["value"]);
+				console.log(circles);
 				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
 									.attr("r", 2.25)
-									.attr("stroke", "red")
-									.on("click",function(d,i){
-										displayInner(d["value"],coeff+1,baseRotate)});
-								
+									.attr("stroke", colorNodes[coeff-2])
+									.attr("__data__", function(d){return d["value"]});
+
+				circles.on("click",function(d,i){
+					shiftCircles(d,i);
+					displayInner(d["value"],coeff+1,baseRotate)});
 				}
+
+						/*.on("mouseover", function(d,i) {
+
+						})			*/	
 			}
 					/*if (root[d].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel")){
 						switch(root[d]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]){
@@ -229,9 +276,10 @@
 						};
 						return 10;*/
 						
+		});
 
-
-	});
+	}
+	loadCollection("s1.json",480);
 	</script>
 </body>
 </html>
