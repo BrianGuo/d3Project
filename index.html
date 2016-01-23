@@ -141,7 +141,7 @@
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 5);
-				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)}).transition().duration(1500)
+				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
 						return "rotate(" + baseRotate + ")translate(120)";
 					});
@@ -172,9 +172,13 @@
 				.enter()
 
 
+			var parentCircle = svg.selectAll("g").filter(function(d){return d===parent});
+			console.log(parentCircle);
+			
 			
 			var unnecessary = svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > coeff-1})
 				.remove();
+			var unnecessary2 = svg.selectAll("path").remove();
 			
 
 
@@ -185,6 +189,39 @@
 						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
 					})
 					.attr("Level", coeff);
+
+			origin = d3.transform(parentCircle.attr("transform")).translate;
+			console.log(origin);
+			var paths = node2.append("path")
+					/*.attr("d", function(d,i){
+						translation = "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
+						destination = d3.transform(translation).translate;
+						console.log(destination);
+						var sourceObject = {"x" : 100, "y" : 200};
+						var targetObject = {"x" : 300, "y" : 400};
+						return "M" + (destination[0]) + " " + (destination[1]) + " L" + (source[0]) + " "+ (source[1])+ "Z";
+						d3.svg.diagonal()
+							.source(sourceObject)
+							.target(targetObject);
+					})*/
+					.attr("d", d3.svg.diagonal()
+									.source(function(d,i){
+										offset = d3.transform("rotate(" + ((children.length/2 - 0.5 - i) *-10) + ")translate(10)").translate;
+										translation = "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *10) + ")translate(" + 90*(coeff-1) + ")";
+										destination = d3.transform(translation).translate;
+										sourceObject = {"x" : destination[0] - offset[0], "y": destination[1] - offset[1]};
+										return sourceObject;
+									})
+									.target(function(d,i){
+										return {"x" : origin[0], "y" : origin[1]};
+									})
+							)
+					.attr("stroke", "purple")
+					.attr("fill", "none");
+
+
+			console.log(paths);
+			
 
 			var circles = backgrounds.append("circle")
 					.attr("fill", "#fff")
