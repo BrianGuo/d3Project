@@ -8,13 +8,14 @@
 
 	
 
-		
+		var canvas = d3.select("body").append("svg")
+						.attr("width", 1000)
+						.attr("height", 1000)
 	function loadCollection(collection, shiftBy){
-		var svg = d3.select("body").append("svg")
-				.attr("width", 1000)
-				.attr("height", 1000)
-				.append("g")
-					.attr("transform", "translate(" + shiftBy + "," + shiftBy + ")");
+		
+
+		var svg = canvas.append("g")
+					.attr("transform", "translate(" + 480+ "," + shiftBy + ")");
 
 		var json;
 
@@ -56,6 +57,7 @@
 		delete root["http://asn.jesandco.org/resources/D10003FB.xml"];*/
 
 		var Domains = [];
+		var count = 0;
 		for (x in root) {
 			/*
 			if (root[x].hasOwnProperty("http://purl.org/dc/terms/description")){
@@ -68,9 +70,12 @@
 				}
 			}*/
 			
-			if (root[x].hasOwnProperty("http://purl.org/ASN/schema/core/statementLabel") && root[x]["http://purl.org/ASN/schema/core/statementLabel"][0]["value"]=="Domain"){
-					Domains.push(x);
+			if (count == 1){
+				for (y in root[x]["http://purl.org/gem/qualifiers/hasChild"]){
+					Domains.push(root[x]["http://purl.org/gem/qualifiers/hasChild"][y]["value"]);
+				}
 			}
+			count ++;
 		}
 
 		/*for (x in root){
@@ -172,6 +177,13 @@
 					.attr("fill", "none")
 					.attr("stroke", "purple")
 					.attr("Level", 1);
+				totalLength = newPath.node().getTotalLength();
+				newPath
+					.attr("stroke-dasharray", totalLength + " " + totalLength)
+					.attr("stroke-dashoffset", totalLength)
+					.transition()
+					.duration(1500)
+					.attr("stroke-dashoffset", 0);
 				layerAngles[0] = {beginAngle : baseRotate + 90, endAngle : nodeDistance * (Domains.length -2) + baseRotate + 90};
 				var filterCondition = d;
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
@@ -273,10 +285,10 @@
 
 					.attr("fill", "none")
 					.attr("Level", coeff-1);
-
+				var totalLength = paths.node().getTotalLength();
 				paths
-					.attr("stroke-dasharray", paths.node().getTotalLength() + " " + paths.node().getTotalLength())
-					.attr("stroke-dashoffset", paths.node().getTotalLength())
+					.attr("stroke-dasharray", totalLength + " " + totalLength)
+					.attr("stroke-dashoffset", totalLength)
 					.transition()
 					.duration(1500)
 					.attr("stroke-dashoffset", 0);
@@ -410,6 +422,8 @@
 
 	}
 	loadCollection("s1.json",480);
+	loadCollection("t1.json", 100);
+	loadCollection("t2.json", 800);
 	</script>
 </body>
 </html>
