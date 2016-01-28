@@ -85,8 +85,15 @@
 		}*/
 		
 		console.log(Domains);
+		var surroundings = [];
 
-		var nodeDistance = 180/(Domains.length);
+		for (i in Domains){
+			surroundings.push(Domains[i]);
+		}
+		console.log(surroundings);
+		var initialLength = Domains.length;
+
+		var nodeDistance = 180/(surroundings.length);
 		var endAngle = 0;
 		var beginAngle = 0;
 
@@ -192,6 +199,7 @@
 					.attr("r", 5);
 				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
+						surroundings.splice(surroundings.indexOf(d), 1);
 						return "rotate(" + baseRotate + ")translate(120)";
 					});
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
@@ -318,7 +326,6 @@
 
 			circles.append("title")
 					.text(function(d,i){
-									console.log(d);
 									return root[d]["http://purl.org/dc/terms/description"][0]["value"];
 								});
 
@@ -361,15 +368,17 @@
 				layerAngles[coeff-2].beginAngle = beginAngle+nodeDistance*(thisIndex-(backgrounds[0].length-1));
 				layerAngles[coeff-2].endAngle = endAngle+nodeDistance*thisIndex;
 				var filterCondition = d;
-				
+				//surroundings.splice(surroundings.indexOf(d),1);
 				console.log(filterCondition);
 				var others = backgrounds.transition()
 								.duration(400)
 								.attr("transform", function(d,i){
 									if (i > thisIndex){
+										surroundings.push(d);
 										return "rotate(" + (beginAngle + nodeDistance*(thisIndex-i)) + ")translate(90)";
 									}
 									else if (i < thisIndex){
+										surroundings.push(d);
 										return "rotate(" + (endAngle + nodeDistance*(thisIndex - i)) + ")translate(90)";
 									}
 									else{
@@ -379,8 +388,19 @@
 									
 								});
 
-				
-										
+				console.log(Domains);
+				console.log(surroundings);
+				if (surroundings.length > Domains.length * 2){
+					console.log("yes");
+					for (x in surroundings){
+						nodeDistance = 180/surroundings.length;
+						var selected = svg.selectAll("g").filter(function(d){return d==surroundings[x]});
+						console.log(selected);
+						selected.transition().duration(800).attr("transform", function(d,i){
+							return "rotate(" + (nodeDistance*2*x) + ")translate(90)";
+						})
+					}
+				}
 
 				var thisCircle = circles.filter(function(d)	{return (d===filterCondition)})
 									.transition()
