@@ -11,6 +11,45 @@
 		var canvas = d3.select("body").append("svg")
 						.attr("width", 1000)
 						.attr("height", 1000)
+
+		var t1 = {};
+		var s1 = {};
+		var t2 = {};
+		function loadCSV(file, first, second){
+			d3.csv(file)
+					.row(function(d){ 
+						//csv[d.subjectURI] = d.objectURI; 
+						return {"from" : d.subjectURI, "to" : d.objectURI}})
+					.get(function(error,rows){for (x in rows){
+						if (first.hasOwnProperty(rows[x].from)){
+							first[rows[x].from].push(rows[x].to);
+						}
+						else{
+							first[rows[x].from] = [rows[x].to];
+						}
+						if (second.hasOwnProperty(rows[x].from)){
+							second[rows[x].from].push(rows[x].to);
+						}
+						else{
+							second[rows[x].from] = [rows[x].to];
+						}
+					}
+					})
+				}
+		
+		loadCSV("t1-s1.csv", t1, s1);
+		loadCSV("t2-s1.csv", t2, s1);
+
+
+		var crosswalk = canvas.append("g")
+							.attr("transform", "translate(" + 100 + ","  + 900)
+							.append("rect");
+
+	function crossWalks(collection, d) {
+
+	}
+
+
 	function loadCollection(collection, vertical, horizontal){
 		
 
@@ -91,7 +130,6 @@
 			var pushObject = {"Level": 2, "data": Domains[i]}
 			surroundings.push(pushObject);
 		}
-		console.log(surroundings);
 		var initialLength = Domains.length;
 
 		var nodeDistance = 180/(surroundings.length);
@@ -391,8 +429,8 @@
 				
 				
 
-
 			function shiftCircles(d,i){
+				console.log(csv);
 				var j = 0;
 				while(j<surroundings.length){
 					
