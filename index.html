@@ -11,11 +11,11 @@
 		var canvas = d3.select("body").append("svg")
 						.attr("width", 1000)
 						.attr("height", 1000)
-	function loadCollection(collection, shiftBy){
+	function loadCollection(collection, vertical, horizontal){
 		
 
 		var svg = canvas.append("g")
-					.attr("transform", "translate(" + 480+ "," + shiftBy + ")");
+					.attr("transform", "translate(" + horizontal+ "," + vertical + ")");
 
 		var json;
 
@@ -98,7 +98,7 @@
 		var maxAngle = 0;
 		var minAngle = 0;
 
-
+		var nodeRadius = 60;
 		
 		var colorNodes = ["#99ccff","#bf80ff","#ffdb4d","#ffb3ff"]
 		function displayDomains(){
@@ -117,6 +117,7 @@
 			var circles = backgrounds.append("circle")
 				.on("click", function(d,i) {
 					svg.selectAll("path").remove();
+					console.log(surroundings.length);
 					shiftCircles(d,i,nodeDistance*2*i);
 					displayInner(d,3,nodeDistance*2*i);
 				});
@@ -127,10 +128,9 @@
 					var pushObject = {"Level": 2, "data": Domains[i]}
 					surroundings.push(pushObject);
 				}
-				console.log(surroundings);
 				nodeDistance = 180/(surroundings.length);
 				backgrounds.transition().duration(1000).attr("transform", function(d,i) {
-							return "rotate("+ nodeDistance*2*i + ")translate(90)";
+							return "rotate("+ nodeDistance*2*i + ")translate(" + nodeRadius + ")";
 						})
 						.attr("Level", 2);
 				circles.transition().duration(1500).attr("r", 7).attr("fill", colorNodes[0]);
@@ -176,11 +176,14 @@
 
 			function shiftCircles(d,i,baseRotate) {
 				surroundings = [];
-				for (i in Domains){
-					var pushObject = {"Level": 2, "data": Domains[i]}
+				for (n in Domains){
+					var pushObject = {"Level": 2, "data": Domains[n]}
 					surroundings.push(pushObject);
 				}
-				target = d3.transform("rotate(" + baseRotate + ")translate(90)").translate;
+				console.log(surroundings.length);
+				nodeDistance= 180/surroundings.length;
+				baseRotate = 2*nodeDistance * i;
+				target = d3.transform("rotate(" + baseRotate + ")translate(" + nodeRadius +")").translate;
 				targetOffset = d3.transform("rotate(" + baseRotate + ")translate(8)").translate;
 				var newPath = svg.append("path")
 					.attr("d", d3.svg.diagonal.radial()
@@ -224,16 +227,14 @@
 					.attr("fill", "white");
 				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
-						var i = 0;
-						console.log(surroundings);
-						console.log(surroundings[i]["data"]);
-						while (i < surroundings.length && surroundings[i]["data"] != d ){
-							i++;
+						var j = 0;
+						while (j < surroundings.length && surroundings[j]["data"] != d ){
+							j++;
 						}
-						if (i < surroundings.length) {
-							surroundings.splice(i, 1);
+						if (j < surroundings.length) {
+							surroundings.splice(j, 1);
 						}
-						return "rotate(" + baseRotate + ")translate(90)";
+						return "rotate(" + baseRotate + ")translate(" + nodeRadius + ")";
 					});
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
@@ -242,8 +243,7 @@
 				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("transform", function(d,i){
-						console.log(surroundings);
-						return "rotate(" + ((360-(maxAngle-minAngle))/(surroundings.length-1)*i + maxAngle) + ")translate(90)";
+						return "rotate(" + ((360-(maxAngle-minAngle))/(surroundings.length-1)*i + maxAngle) + ")translate(" + nodeRadius + ")";
 					});
 				
 				
@@ -264,14 +264,14 @@
 			for (x in root[parent]["http://purl.org/gem/qualifiers/hasChild"]){
 				children.push(root[parent]["http://purl.org/gem/qualifiers/hasChild"][x]["value"]);
 			}
-			console.log(children)
+
 			var node2 = svg.selectAll("Level" + coeff)
 				.data(children)
 				.enter()
 
-			console.log(parent);
+			
 			var parentCircle = svg.selectAll("g").filter(function(d){return d===parent});
-			console.log(parentCircle);
+			
 			
 			
 			var unnecessary = svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > coeff-1})
@@ -285,17 +285,17 @@
 			var backgrounds = node2.append("g");
 			backgrounds.transition().duration(1500)
 					.attr("transform", function(d,i) {
-						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *4) + ")translate(" + 90*(coeff-1) + ")";
+						return "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *4) + ")translate(" + nodeRadius*(coeff-1) + ")";
 					})
 					.attr("Level", coeff);
 
 
 			function paths() {
-			console.log(parentCircle);
+			
 			origin = d3.transform(parentCircle.attr("transform")).translate;
 			//origin = d3.transform("rotate(" + baseRotate + ")translate(" + (90*(coeff-2)) + ")").translate;
 			originOffset = d3.transform("rotate(" + baseRotate + ")translate(8)").translate;
-			console.log(origin);
+			
 
 			
 			var paths = node2.append("path")
@@ -315,7 +315,7 @@
 									.target(function(d,i){
 										offset = d3.transform("rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *4) + ")translate(8)").translate;
 										
-										translation = "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *4) + ")translate(" + 90*(coeff-1) + ")";
+										translation = "rotate(" + (baseRotate - (children.length/2 - 0.5 - i) *4) + ")translate(" + nodeRadius*(coeff-1) + ")";
 										destination = d3.transform(translation).translate;
 										sourceObject = {"x" : destination[0] - offset[0], "y": destination[1] - offset[1]};
 										return sourceObject;
@@ -368,7 +368,7 @@
 			
 			function drawPrevious(d,i){
 				//origin = d3.transform(parentCircle.attr("transform")).translate;
-				origin = d3.transform("rotate(" + baseRotate + ")translate(" + (90*(coeff-1) - 8) + ")").translate;
+				origin = d3.transform("rotate(" + baseRotate + ")translate(" + (nodeRadius*(coeff-1) - 8) + ")").translate;
 				originOffset = d3.transform("rotate(" + baseRotate + ")translate(8)").translate;
 				var newPath = svg.append("path")
 					.attr("d", d3.svg.diagonal()
@@ -395,7 +395,7 @@
 			function shiftCircles(d,i){
 				var j = 0;
 				while(j<surroundings.length){
-					console.log(surroundings[j])
+					
 					if (surroundings[j]["Level"] >= coeff){
 						surroundings.splice(j,1);
 					}
@@ -406,13 +406,12 @@
 				
 				var thisIndex = i;
 				
-				console.log("length");
-				console.log(surroundings.length);
+				
 				nodeDistance = 180/surroundings.length;
 				
 				var filterCondition = d;
 				//surroundings.splice(surroundings.indexOf(d),1);
-				console.log(filterCondition);
+				
 
 				/*var others = backgrounds.transition()
 								.duration(400)
@@ -443,9 +442,9 @@
 								});
 				*/
 				backgrounds.each(function(d,i) {
-					console.log(this);
+					
 					if (i == thisIndex){
-						this.setAttribute("transform", "rotate(" + baseRotate + ")translate(" + (90*(coeff-1)) + ")");
+						this.setAttribute("transform", "rotate(" + baseRotate + ")translate(" + (nodeRadius*(coeff-1)) + ")");
 					}
 					else{
 						var pushObject = {"Level": coeff, "data": d};
@@ -456,13 +455,11 @@
 				for (x in surroundings) {
 					var selected = svg.selectAll("g").filter(function(d){return d==surroundings[x]["data"]});
 					selected.transition().duration(800).attr("transform", function(d,i){
-						console.log((360-(maxAngle-minAngle))/(surroundings.length-1)*i);
-						return "rotate(" + (((360-(maxAngle-minAngle))/(surroundings.length-1)*x) + maxAngle) + ")translate(90)";
+						
+						return "rotate(" + (((360-(maxAngle-minAngle))/(surroundings.length-1)*x) + maxAngle) + ")translate(" +  nodeRadius + ")";
 					})
 				}
-				console.log(surroundings);
-				
-				console.log(surroundings.length);
+			
 				/*if (surroundings.length > Domains.length * 2){
 					console.log("yes");
 					for (x in surroundings){
@@ -474,7 +471,7 @@
 					}
 				}*/
 				
-				console.log(coeff);
+				
 				var thisCircle = circles.filter(function(d)	{return (d===filterCondition)})
 									.transition()
 									.duration(1000)
@@ -482,7 +479,7 @@
 									.attr("stroke", "#99ccff")
 									.attr("fill", "white")
 									.attr("__data__", d);
-				console.log(circles);
+				
 				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
 									.attr("r", 6)
 									.attr("stroke", colorNodes[coeff-2])
@@ -492,6 +489,7 @@
 				circles.on("click",function(d,i){
 					svg.selectAll("path").filter(function(d,i){return this.getAttribute("Level") >= coeff}).remove();
 					shiftCircles(d,i);
+					
 					displayInner(d,coeff+1,baseRotate)}
 				);
 					setTimeout(function(){drawPrevious(d,i)}, 400);
@@ -517,9 +515,9 @@
 		});
 
 	}
-	loadCollection("s1.json",480);
-	loadCollection("t1.json", 100);
-	loadCollection("t2.json", 800);
+	loadCollection("s1.json", 400, 550);
+	loadCollection("t1.json", 700, 200);
+	loadCollection("t2.json", 700, 900);
 	</script>
 </body>
 </html>
