@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+	<link type="text/css" rel="stylesheet" href="style.css">
 </head>
 <body>
 	<script src="http://d3js.org/d3.v3.min.js"></script>
@@ -200,7 +201,7 @@
 						)
 					)
 					.attr("fill", "none")
-					.attr("stroke", "black")
+					.attr("stroke", "#fff")
 					.attr("Level", 1);
 				//offset = d3.transform("rotate(" + baseRotate + ")translate(38)").translate;
 				/*var newPath = svg.append("line")
@@ -224,6 +225,7 @@
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 7)
+					.attr("stroke","white")
 					.attr("fill", "white");
 				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
@@ -239,6 +241,7 @@
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 7)
+					.attr("stroke","fff")
 					.attr("fill", "#99ccff");
 				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
@@ -324,7 +327,7 @@
 										return {"x" : origin[0] + originOffset[0], "y" : origin[1] + originOffset[1]};
 									})
 							)
-					.attr("stroke", "black")
+					.attr("stroke", "#fff")
 
 					.attr("fill", "none")
 					.attr("Level", coeff-1);
@@ -385,7 +388,7 @@
 						)
 					)
 					.attr("fill", "none")
-					.attr("stroke", "black")
+					.attr("stroke", "#fff")
 					.attr("Level", coeff-1);
 			}
 				
