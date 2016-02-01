@@ -6,6 +6,12 @@
 </head>
 <body>
 	<h1 id="title">Educational Standards</h1>
+		<!--instructions-->
+	<div id="instructions">
+		<p id="text">To expand node, click on it.</p>
+		<p id="text">To see crosswalks, select a node by clicking on it again.</p>
+		<p id="text">To see more information about any node, hover your mouse over the node.</p>
+	</div>
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
 		var canvas = d3.select("body").append("svg")
@@ -599,12 +605,7 @@
 	loadCollection("t1.json", 700, 200);
 	loadCollection("t2.json", 700, 900);
 	</script>
-	<!--instructions-->
-	<div id="instructions">
-		<p id="text">To expand node, click on it.</p>
-		<p id="text">To see crosswalks, __________</p>
-		<p id="text">To see more information about any node, hover your mouse over the node.</p>
-	</div>
+
 	<!--buttons-->
 	<div id="buttons">
 	<button id="math">M</button>
