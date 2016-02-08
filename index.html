@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
 	<link type="text/css" rel="stylesheet" href="style.css">
 </head>
@@ -8,10 +8,11 @@
 	<script>
 
 	
-
+		var qualifier = "http://purl.org/gem/qualifiers/"
+		var dc = "http://purl.org/dc/terms/"
 		var canvas = d3.select("body").append("svg")
-						.attr("width", 1000)
-						.attr("height", 1000)
+						.attr("width", "100%")
+						.attr("height", 1050)
 
 		var t1 = {};
 		var s1 = {};
@@ -51,46 +52,90 @@
 
 		var colorNodes = ["#99ccff","#bf80ff","#ffdb4d","#ffb3ff", "#fe9900"];
 		var crosswalk = canvas.append("g")
-							.attr("transform", "translate(" + 100 + ","  + 900+ ")")
+							.attr("transform", "translate(" + 0 + ","  + 920+ ")")
 		var rect = crosswalk.append("rect")
-								.attr("width", 1000)
-								.attr("height", 200)
+								.attr("width", 1300)
+								.attr("height", 300)
 								.attr("fill", "black");
 
+		
+
 		var reference = {"s1.json" : s1, "t1.json" : t1, "t2.json": t2}
+		var roots = {};
+		var selected = null;
+		var selectedColor = null;
 
 	function crosswalks(collection, d) {
 		var source = reference[collection];
+		if (collection == "t1.json" || collection == "t2.json"){
+			var root = [roots["s1.json"]];
+		}
+		else{
+			var root = [roots["t1.json"], roots["t2.json"]];
+		}
+		console.log(collection);
 		console.log(source);
+		console.log(root);
 		crosswalk.selectAll("g").remove();
 		if (source.hasOwnProperty(d)){
 			var array = source[d];
 			var backgrounds = crosswalk.selectAll("g").data(source[d]).enter().append("g")
 									
 									.attr("transform", function(d,i){
-										var rowamt = 10 + Math.sqrt(array);
-										console.log(d);
-										return "translate(" + (950/(i%rowamt)*27 + 30)+ "," + ((20 * 80/Math.floor(i/rowamt)) + 20) + ")"
+										return "translate(" + ((i%30)*29 + 120)+ "," + ((23 * Math.floor(i/30)) + 27) + ")"
 									})
 									.attr("level", function(d,i) {
 										return d["level"];
 									})
 									.append("circle")
-										.attr("r", 40 - Math.sqrt(source[d].length))
+										.attr("r", 10)
 										.attr("fill", function(d,i) {
 											if (d["targetCollection"] == s1) {
-												console.log("here")
+												
 												return colorNodes[d["level"] - 3];
 											}
 											else{
-												console.log(d["level"]);
+												
 												return colorNodes[d["level"]];
 											}
-										});
+										})
+										.append("title")
+											.text(function(d,i){
+												console.log(d["target"]);
+												if (root.length == 1) {
+													var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
+													result = root[0][d["target"]][dc + "description"][0]["value"] + "\n" + "Education Level: "
+													for (x in root[0][d["target"]][dc + "educationLevel"]){
+														appending = root[0][d["target"]][dc+ "educationLevel"][x]["value"].replace(junk, "");
+														result = result + appending + ", ";
+													} ;
+													return result;
+												}
+												else{
+													if (root[0].hasOwnProperty(d["target"])){
+														return root[0][d["target"]][dc + "description"][0]["value"];
+													}
+													else{
+														return root[1][d["target"]][dc + "description"][0]["value"];
+													}
+												}
+											})
 		}
 	}
 
+	function selectCircle(circle) {
+		if (selected != null) {
+			selected.setAttribute("fill", selectedColor);
+			
+		}
+		if (circle != null){
+			selected = circle;
+			selectedColor = selected.getAttribute("fill");
+			circle.setAttribute("fill", "white");
+		}
+	}
 
+	var previous;
 	function loadCollection(collection, vertical, horizontal){
 		
 
@@ -101,7 +146,7 @@
 
 		d3.json(collection, function(error, root) {
 			if (error) console.log("error");
-
+			roots[collection] = root;
 			var focus = root;
 			
 
@@ -125,10 +170,23 @@
 
 		svg.append("circle")
 			.attr("r", 20)
-			.attr("stroke", "#00e6ac")
+			.attr("stroke", "white")
 			.attr("fill", "#00e6ac")
 			.attr("stroke-width", "1.5px")
-			.on("click", function(d) {displayDomains()});
+			.attr("expanded", false)
+			.on("click", function(d) {
+				console.log(this.getAttribute("expanded"));
+				if (this.getAttribute("expanded") == "false") {
+					this.setAttribute("expanded", true); 
+					displayDomains()}
+				else{
+					console.log("hi");
+					svg.selectAll("g").transition().duration(800).attr("transform", "translate(0)");
+					setTimeout(function(){svg.selectAll("g").remove()}, 600);
+					svg.selectAll("path").remove();
+					this.setAttribute("expanded", false);
+				}
+			});
 
 					
 
@@ -151,8 +209,8 @@
 			}*/
 			
 			if (count == 1){
-				for (y in root[x]["http://purl.org/gem/qualifiers/hasChild"]){
-					Domains.push(root[x]["http://purl.org/gem/qualifiers/hasChild"][y]["value"]);
+				for (y in root[x][qualifier + "hasChild"]){
+					Domains.push(root[x][qualifier + "hasChild"][y]["value"]);
 				}
 			}
 			count ++;
@@ -190,17 +248,43 @@
 
 			
 
-			svg.select("circle")
-				.on("click", function(d){returnPositions()});
-
+			
 			var circles = backgrounds.append("circle")
+				.attr("expanded", "false")
 				.on("click", function(d,i) {
 					svg.selectAll("path").remove();
-					console.log(surroundings.length);
-					shiftCircles(d,i,nodeDistance*2*i);
-					displayInner(d,3,nodeDistance*2*i);
-
+					if (this.getAttribute("expanded") == "false"){
+						selectCircle(this);
+						if (previous != null) {
+							previous.setAttribute("expanded", "false");
+						}
+						previous = this;
+						//returnPositions();
+						crosswalks(collection,d);
+						shiftCircles(d,i,nodeDistance*2*i);
+						this.setAttribute("expanded", "true");
+						displayInner(d,3,nodeDistance*2*i);
+					}
+					else{
+						this.setAttribute("expanded", "false");
+						var theseCircles = svg.selectAll("g").filter(function(d){
+							return this.getAttribute("Level") > 2;
+						})
+						theseCircles.transition().duration(800).attr("transform", "translate(0)")
+						setTimeout(function(){theseCircles.remove()}, 600);
+						selectCircle(null);
+						unselect(d,3);
+						returnPositions();
+					}
 				});
+
+			function unselect(d, coeff) {
+				filterCondition = d;
+				svg.selectAll("g").filter(function(d) {return d == filterCondition})
+										.selectAll("circle")
+											.attr("fill", colorNodes[coeff-3])
+											
+			}
 
 			function returnPositions() {
 				surroundings = [];
@@ -214,10 +298,10 @@
 						})
 						.attr("Level", 2);
 				circles.transition().duration(1500).attr("r", 7).attr("fill", colorNodes[0]);
-				svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > 2})
-					.remove();
-				svg.selectAll("path").remove();
-				svg.selectAll("line").remove();
+				//svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > 2})
+					//.remove();
+				//svg.selectAll("path").remove();
+				//svg.selectAll("line").remove();
 				
 			}
 
@@ -225,7 +309,13 @@
 
 			circles.append("title")
 					.text(function(d){
-						return root[d]["http://purl.org/dc/terms/description"][0]["value"];
+						var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
+						result = root[d][dc + "description"][0]["value"] + "\n" + "Education Level: "
+						for (x in root[d][dc + "educationLevel"]){
+							appending = root[d][dc+ "educationLevel"][x]["value"].replace(junk, "");
+							result = result + appending + ", ";
+						} ;
+						return result;
 					})
 
 			circles
@@ -235,10 +325,10 @@
 				.transition()
 				.duration(1000)	
 				.attr("r",7)
-				.attr("stroke", "#99ccff")
+				.attr("stroke", "white")
 				.attr("fill", "#99ccff")
 				.attr("stroke-width",0)	
-				.attr("stroke-width", "1.5px")
+				.attr("stroke-width", "1px")
 
 			
 			/*function addLines(d,i){
@@ -255,14 +345,15 @@
 
 
 			function shiftCircles(d,i,baseRotate) {
+				console.log(baseRotate);
 				surroundings = [];
 				for (n in Domains){
 					var pushObject = {"Level": 2, "data": Domains[n]}
 					surroundings.push(pushObject);
 				}
-				console.log(surroundings.length);
 				nodeDistance= 180/surroundings.length;
 				baseRotate = 2*nodeDistance * i;
+				console.log(baseRotate);
 				target = d3.transform("rotate(" + baseRotate + ")translate(" + nodeRadius +")").translate;
 				targetOffset = d3.transform("rotate(" + baseRotate + ")translate(8)").translate;
 				var newPath = svg.append("path")
@@ -304,7 +395,6 @@
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 7)
-					.attr("stroke","white")
 					.attr("fill", "white");
 				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
@@ -320,7 +410,7 @@
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
 					.attr("r", 7)
-					.attr("stroke","fff")
+					.attr("stroke","#fff")
 					.attr("fill", "#99ccff");
 				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
@@ -343,8 +433,8 @@
 		function displayInner(parent, coeff, baseRotate) {
 			var children = [];
 
-			for (x in root[parent]["http://purl.org/gem/qualifiers/hasChild"]){
-				children.push(root[parent]["http://purl.org/gem/qualifiers/hasChild"][x]["value"]);
+			for (x in root[parent][qualifier + "hasChild"]){
+				children.push(root[parent][qualifier + "hasChild"][x]["value"]);
 			}
 
 			var node2 = svg.selectAll("Level" + coeff)
@@ -354,6 +444,7 @@
 			
 			var parentCircle = svg.selectAll("g").filter(function(d){return d===parent});
 			
+			console.log(surroundings);
 			
 			
 			var unnecessary = svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > coeff-1})
@@ -415,7 +506,7 @@
 					.attr("stroke-dasharray", totalLength + " " + totalLength)
 					.attr("stroke-dashoffset", totalLength)
 					.transition()
-					.duration(1500)
+					.duration(1000)
 					.attr("stroke-dashoffset", 0);
 					
 					
@@ -428,12 +519,12 @@
 			
 
 			var circles = backgrounds.append("circle")
-					.attr("fill", "#fff")
-					.attr("stroke", "#99ccff")
-					.attr("fill", "#99ccff")
+					.attr("stroke", "white")
+					.attr("fill", colorNodes[coeff-2])
 					.attr("__data__", function(d){return d})
 					.on("click", function(d,i) {
 							shiftCircles(d,i);
+							selectCircle(this);
 							displayInner(d, coeff + 1, baseRotate);
 							drawPrevious(d,i);
 							crosswalks(collection, d);
@@ -445,7 +536,13 @@
 
 			circles.append("title")
 					.text(function(d,i){
-									return root[d]["http://purl.org/dc/terms/description"][0]["value"];
+									var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
+									result = root[d][dc + "description"][0]["value"] + "\n" + "Education Level: "
+									for (x in root[d][dc + "educationLevel"]){
+										appending = root[d][dc+ "educationLevel"][x]["value"].replace(junk, "");
+										result = result + appending + ", ";
+									} ;
+									return result;
 								});
 
 			
@@ -470,6 +567,12 @@
 					.attr("fill", "none")
 					.attr("stroke", "#fff")
 					.attr("Level", coeff-1);
+				newPath
+					.attr("stroke-dasharray", totalLength + " " + totalLength)
+					.attr("stroke-dashoffset", totalLength)
+					.transition()
+					.duration(1000)
+					.attr("stroke-dashoffset", 0);
 			}
 				
 				
@@ -536,8 +639,8 @@
 
 				for (x in surroundings) {
 					var selected = svg.selectAll("g").filter(function(d){return d==surroundings[x]["data"]});
+
 					selected.transition().duration(800).attr("transform", function(d,i){
-						
 						return "rotate(" + (((360-(maxAngle-minAngle))/(surroundings.length-1)*x) + maxAngle) + ")translate(" +  nodeRadius + ")";
 					})
 				}
@@ -558,20 +661,22 @@
 									.transition()
 									.duration(1000)
 									.attr("r", 7)
-									.attr("stroke", "#99ccff")
 									.attr("fill", "white")
 									.attr("__data__", d);
 				
 				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
 									.attr("r", 6)
-									.attr("stroke", colorNodes[coeff-2])
+									.attr("stroke", "white")
 									.attr("fill", colorNodes[coeff-2])
 									.attr("__data__", function(d){return d});
+
+				//parentCircle.selectAll("circle").transition().duration(800).attr("stroke", "white");
 
 				circles.on("click",function(d,i){
 					svg.selectAll("path").filter(function(d,i){return this.getAttribute("Level") >= coeff}).remove();
 					shiftCircles(d,i);
 					crosswalks(collection,d);
+					selectCircle(this);
 					displayInner(d,coeff+1,baseRotate)}
 				);
 					setTimeout(function(){drawPrevious(d,i)}, 400);
@@ -593,10 +698,12 @@
 								return 2;
 						};
 						return 10;*/
-						
+				
 		});
+		
 
 	}
+
 	loadCollection("s1.json", 400, 550);
 	loadCollection("t1.json", 700, 200);
 	loadCollection("t2.json", 700, 900);
