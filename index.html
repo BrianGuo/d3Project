@@ -11,17 +11,18 @@
 		<p id="text">To expand node, click on it.</p>
 		<p id="text">To see crosswalks, select a node by clicking on it again.</p>
 		<p id="text">To see more information about any node, hover your mouse over the node.</p>
-		<p id="text">Legend: Green-Subject, Blue-Domain, Purple-Cluster, Yellow-Standard</p>
 	</div>
+	<div id="svg">
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
 
 	
 		var qualifier = "http://purl.org/gem/qualifiers/"
 		var dc = "http://purl.org/dc/terms/"
-		var canvas = d3.select("body").append("svg")
-						.attr("width", 1000)
-						.attr("height", 1000)
+		var canvas = d3.select("#svg").append("svg")
+						.attr("width", 1100)
+						.attr("height", 1050)
+						/*.attr("transform", "translate(0,50)")*/
 
 		var t1 = {};
 		var s1 = {};
@@ -61,7 +62,7 @@
 
 		var colorNodes = ["#99ccff","#bf80ff","#ffdb4d","#ffb3ff", "#fe9900"];
 		var crosswalk = canvas.append("g")
-							.attr("transform", "translate(" + 0 + ","  + 920+ ")")
+							.attr("transform", "translate( " + 0 +  ","  + 920+ ")")
 		var rect = crosswalk.append("rect")
 								.attr("width", 1300)
 								.attr("height", 300)
@@ -576,6 +577,7 @@
 					.attr("fill", "none")
 					.attr("stroke", "#fff")
 					.attr("Level", coeff-1);
+				var totalLength = newPath.node().getTotalLength();
 				newPath
 					.attr("stroke-dasharray", totalLength + " " + totalLength)
 					.attr("stroke-dashoffset", totalLength)
@@ -713,10 +715,11 @@
 
 	}
 
-	loadCollection("s1.json", 400, 550);
-	loadCollection("t1.json", 700, 200);
-	loadCollection("t2.json", 700, 900);
+	loadCollection("s1.json", 350, 550);
+	loadCollection("t1.json", 650, 200);
+	loadCollection("t2.json", 650, 900);
 	</script>
+</div>
 
 	<!--buttons-->
 	<div id="buttons">
