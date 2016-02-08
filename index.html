@@ -1,3 +1,4 @@
+<!--Copyright 2016 Brian Guo -->
 <!DOCTYPE html>
 <html lang="en" >
 <head>
@@ -14,11 +15,38 @@
 	</div>
 	<div id="svg">
 	<script src="http://d3js.org/d3.v3.min.js"></script>
-	<script>
+	</div>
 
-	
+	<!--buttons-->
+	<div id="buttons">
+	<button id="math">M</button>
+	<button id="english">E</button>
+	</div>
+	<!---->
+	</body>
+	<script>
+	function showText1(subjectSelected, colorSelected, subjectUnselected, colorUnselected){
+		console.log(d3.select("body").select(subjectSelected))
+		d3.select("body").select(subjectSelected)
+			.style("background-color","#fff")
+			.style("color",colorSelected)
+			.style("border-color",colorSelected);
+		d3.select("body").select(subjectUnselected)
+			.style("background-color",colorUnselected)
+			.style("color","#fff")
+			.style("border-color","#fff");
+	}
+
+	d3.selectAll("body").select("#buttons").select("#math").on("click", function(){showText1("#math","#6a0027", "#english","#709898")});
+	d3.selectAll("body").select("#buttons").select("#english").on("click", function(){showText1("#english","#709898","#math","#6a0027")});
+
+
+	function loadSubject(coreCollection, sub1, sub2){
+		d3.select("body").selectAll("svg").remove();
 		var qualifier = "http://purl.org/gem/qualifiers/"
 		var dc = "http://purl.org/dc/terms/"
+		var core = "http://purl.org/ASN/schema/core/"
+		var elements = "http://purl.org/dc/elements/1.1/"
 		var canvas = d3.select("#svg").append("svg")
 						.attr("width", 1100)
 						.attr("height", 1050)
@@ -55,8 +83,8 @@
 			}
 			
 		
-		loadCSV("t1-s1.csv", t1, s1);
-		loadCSV("t2-s1.csv", t2, s1);
+		loadCSV(sub1.substring(0,2) + "-" + coreCollection.substring(0,2) + ".csv", t1, s1);
+		loadCSV(sub2.substring(0,2) + "-" + coreCollection.substring(0,2) + ".csv", t2, s1);
 		var colorNodes = ["#99ccff","#bf80ff","#ffdb4d","#ffb3ff", "#fe9900"];
 		var crosswalk = canvas.append("g")
 							.attr("transform", "translate( " + 0 +  ","  + 920+ ")")
@@ -64,19 +92,50 @@
 								.attr("width", 1300)
 								.attr("height", 300)
 								.attr("fill", "black");
-		var reference = {"s1.json" : s1, "t1.json" : t1, "t2.json": t2}
+		var reference = {};
+		reference[coreCollection] = s1;
+		reference[sub1] = t1;
+		reference[sub2] = t2;
 		var roots = {};
 		var selected = null;
 		var selectedColor = null;
 
+	function printText(root, data,index){
+		var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/";
+		console.log(data);
+		result = root[index][data["target"]][dc + "description"][0]["value"] + "\n" + "Education Level: "
+		for (x in root[index][data["target"]][dc + "educationLevel"]){
+			appending = root[index][data["target"]][dc+ "educationLevel"][x]["value"].replace(junk, "");
+			result = result + appending + ", ";
+		} ;
+		if (root[index][data["target"]].hasOwnProperty(core+"statementLabel")){
+			result = result + "\n" + "Level: " + root[index][data["target"]][core + "statementLabel"][0]["value"];
+		}
+		var n = 1;
+		var importantkey = null;
+		for (x in root[index]){
+			if (n==2){
+				importantkey = x;
+				break;
+			}
+			n++;
+		}
+		console.log(importantkey);
+		result = result + "\n" + "Collection: " + root[index][importantkey][elements+"title"][0]["value"];
+		console.log(result);
+		return result;
+	}
+
 	function crosswalks(collection, d) {
+
 		var source = reference[collection];
-		if (collection == "t1.json" || collection == "t2.json"){
-			var root = [roots["s1.json"]];
+		if (collection == sub1 || collection == sub2){
+			var root = [roots[coreCollection]];
 		}
 		else{
-			var root = [roots["t1.json"], roots["t2.json"]];
+			var root = [roots[sub1], roots[sub2]];
 		}
+		console.log(reference);
 		console.log(collection);
 		console.log(source);
 		console.log(root);
@@ -92,30 +151,18 @@
 									})
 									.append("circle")
 										.attr("r", 10)
-										.attr("fill", function(d,i) {
-											if (d["targetCollection"] == s1) {
-												return colorNodes[d["level"] - 3];
-											}
-											else{return colorNodes[d["level"]];}
-										})
+										.attr("fill", "white")
 										.append("title")
 											.text(function(d,i){
-												console.log(d["target"]);
 												if (root.length == 1) {
-													var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
-													result = root[0][d["target"]][dc + "description"][0]["value"] + "\n" + "Education Level: "
-													for (x in root[0][d["target"]][dc + "educationLevel"]){
-														appending = root[0][d["target"]][dc+ "educationLevel"][x]["value"].replace(junk, "");
-														result = result + appending + ", ";
-													} ;
-													return result;
+													return printText(root,d,0);
 												}
 												else{
 													if (root[0].hasOwnProperty(d["target"])){
-														return root[0][d["target"]][dc + "description"][0]["value"];
+														return printText(root,d, 0);
 													}
 													else{
-														return root[1][d["target"]][dc + "description"][0]["value"];
+														return printText(root,d,1);
 													}
 												}
 											})
@@ -143,17 +190,30 @@
 			if (error) console.log("error");
 			roots[collection] = root;
 			var focus = root;
+			var relatedCrosswalk = [];
+			var theseWalks = reference[collection];
+			for (i in theseWalks){
+				var x = i;
+				while (root[x].hasOwnProperty(qualifier + "isChildOf")){
+					relatedCrosswalk.push(x);
+					x = root[x][qualifier + "isChildOf"][0]["value"];
+				}
+			}
+
+
 		svg.append("circle")
 			.attr("r", 20)
-			.attr("stroke", "white")
+			.attr("stroke", "#000")
 			.attr("fill", "#00e6ac")
-			.attr("stroke-width", "1.5px")
+			.attr("stroke-width", "1.7px")
 			.attr("expanded", false)
 			.on("click", function(d) {
 				console.log(this.getAttribute("expanded"));
 				if (this.getAttribute("expanded") == "false") {
 					this.setAttribute("expanded", true); 
-					displayDomains()}
+					displayDomains()
+					console.log("Here")
+				}
 				else{
 					console.log("hi");
 					svg.selectAll("g").transition().duration(800).attr("transform", "translate(0)");
@@ -191,6 +251,7 @@
 		var nodeRadius = 60;
 		
 		function displayDomains(){
+
 			var node = svg.selectAll("g")
 					.data(Domains)					
 					.enter();
@@ -228,7 +289,8 @@
 				filterCondition = d;
 				svg.selectAll("g").filter(function(d) {return d == filterCondition})
 										.selectAll("circle")
-											.attr("fill", colorNodes[coeff-3])						
+											.attr("fill", colorNodes[coeff-3]);
+
 			}
 
 			function returnPositions() {
@@ -242,7 +304,15 @@
 							return "rotate("+ nodeDistance*2*i + ")translate(" + nodeRadius + ")";
 						})
 						.attr("Level", 2);
-				circles.transition().duration(1500).attr("r", 7).attr("fill", colorNodes[0]);
+				circles.transition().duration(1500).attr("r",8).attr("fill", colorNodes[0])
+													.attr("stroke", function(d){
+														if (relatedCrosswalk.indexOf(d) > -1){
+															return "#fff";
+														}
+														else{
+															return "#000";
+														}
+													});
 			}
 
 			returnPositions();
@@ -262,11 +332,18 @@
 				.attr("Level", 1)
 				.transition()
 				.duration(1000)	
-				.attr("r",7)
-				.attr("stroke", "white")
+				.attr("r",8)
+				.attr("stroke", function(d){
+					if (relatedCrosswalk.indexOf(d) > -1) {
+						return "#fff";
+					}
+					else{
+						return "#000";
+					}
+				})
 				.attr("fill", "#99ccff")
 				.attr("stroke-width",0)	
-				.attr("stroke-width", "1px")
+				.attr("stroke-width", "1.7px")
 
 
 			function shiftCircles(d,i,baseRotate) {
@@ -305,7 +382,8 @@
 				var coeff = (i > Domains.length/4 && i < Domains.length*3/4 ? 1 : 0);
 				var thisCircle = circles.filter(function(d){return (d===filterCondition)}).transition()
 					.duration(1500)
-					.attr("r", 7)
+					.attr("r",8)
+					.attr("stroke", "#000")
 					.attr("fill", "white");
 				var thisBackground = backgrounds.filter(function(d){return (d===filterCondition)})
 					.attr("transform", function(d,i) {
@@ -320,8 +398,8 @@
 					});
 				var others = circles.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
-					.attr("r", 7)
-					.attr("stroke","#fff")
+					.attr("r",8)
+					.attr("stroke", "#000")
 					.attr("fill", "#99ccff");
 				var otherNodes = backgrounds.filter(function(d){return !(d===filterCondition)}).transition()
 					.duration(1500)
@@ -385,19 +463,33 @@
 			console.log(paths);
 
 			var circles = backgrounds.append("circle")
-					.attr("stroke", "white")
+					.attr("stroke", function(d){
+						if (relatedCrosswalk.indexOf(d) > -1){
+							return "#fff";
+						}
+						else{
+							return "#000";
+						}
+					})
 					.attr("fill", colorNodes[coeff-2])
 					.attr("__data__", function(d){return d})
+					.attr("expanded", "false")
 					.on("click", function(d,i) {
+						if(this.getAttribute("expanded") == "false" ){
 							shiftCircles(d,i);
-							selectCircle(this);
 							displayInner(d, coeff + 1, baseRotate);
+							this.setAttribute("expanded", "true");
+						}
+						else{
+							this.setAttribute("expanded", "false")
+						}
+							selectCircle(this);
 							drawPrevious(d,i);
 							crosswalks(collection, d);
 						});
 			circles.transition().duration(1000)
-				.attr("r",7)
-				.attr("stroke-width", "1.5px");
+				.attr("r",8)
+				.attr("stroke-width", "1.7px");
 			circles.append("title")
 					.text(function(d,i){
 									var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
@@ -438,7 +530,11 @@
 					.attr("stroke-dashoffset", 0);
 			}
 					
-
+			function recallCircles(level) {
+				var theseCircles = svg.selectAll("g").filter(function(d) {return this.getAttribute("Level") > level})
+				theseCircles.transition().duration(800).attr("transform", "translate(0)");
+				setTimeout(function(){theseCircles.remove()},600);
+			}
 			function shiftCircles(d,i){
 				var j = 0;
 				while(j<surroundings.length){
@@ -454,7 +550,7 @@
 				var filterCondition = d;			
 				backgrounds.each(function(d,i) {				
 					if (i == thisIndex){
-						this.setAttribute("transform", "rotate(" + baseRotate + ")translate(" + (nodeRadius*(coeff-1)) + ")");
+						d3.select(this).transition().duration(400).attr("transform", "rotate(" + baseRotate + ")translate(" + (nodeRadius*(coeff-1)) + ")");
 					}
 					else{
 						var pushObject = {"Level": coeff, "data": d};
@@ -473,21 +569,32 @@
 				var thisCircle = circles.filter(function(d)	{return (d===filterCondition)})
 									.transition()
 									.duration(1000)
-									.attr("r", 7)
+									.attr("r",8)
 									.attr("fill", "white")
+									.attr("stroke", "#000")
 									.attr("__data__", d);
 				
 				var otherCircles = circles.filter(function(d){return !(d===filterCondition)})
-									.attr("r", 6)
-									.attr("stroke", "white")
+									.attr("r", 8)
+									.attr("stroke", "#000")
 									.attr("fill", colorNodes[coeff-2])
+									.attr("expanded", "false")
 									.attr("__data__", function(d){return d});
 				circles.on("click",function(d,i){
 					svg.selectAll("path").filter(function(d,i){return this.getAttribute("Level") >= coeff}).remove();
-					shiftCircles(d,i);
+					if (this.getAttribute("expanded") == "false"){
+						shiftCircles(d,i);
+						displayInner(d,coeff+1,baseRotate);
+						this.setAttribute("expanded", "true");
+					}
+					else{
+						recallCircles(coeff);
+						shiftCircles(d,i);
+						this.setAttribute("expanded", "false");
+					}
 					crosswalks(collection,d);
 					selectCircle(this);
-					displayInner(d,coeff+1,baseRotate)}
+					}
 				);
 					setTimeout(function(){drawPrevious(d,i)}, 400);
 				}
@@ -495,17 +602,14 @@
 		});
 	}
 
-	loadCollection("s1.json", 350, 550);
-	loadCollection("t1.json", 650, 200);
-	loadCollection("t2.json", 650, 900);
-	</script>
-</div>
+	loadCollection(coreCollection, 300, 550);
+	loadCollection(sub1, 650, 200);
+	loadCollection(sub2, 650, 900);
+}
+var buttons = d3.select("body").selectAll("div#buttons")
+buttons.selectAll("#math").on("click", function(){loadSubject("s1.json","t1.json","t2.json")})
+buttons.selectAll("#english").on("click", function(){loadSubject("s2.json","t3.json","t4.json")})
 
-	<!--buttons-->
-	<div id="buttons">
-	<button id="math">M</button>
-	<button id="english">E</button>
-	</div>
-	<!---->
-</body>
+	</script>
+
 </html>
