@@ -2,8 +2,17 @@
 <html lang="en" >
 <head>
 	<link type="text/css" rel="stylesheet" href="style.css">
+	<link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
 </head>
 <body>
+	<h1 id="title">Educational Standards</h1>
+		<!--instructions-->
+	<div id="instructions">
+		<p id="text">To expand node, click on it.</p>
+		<p id="text">To see crosswalks, select a node by clicking on it again.</p>
+		<p id="text">To see more information about any node, hover your mouse over the node.</p>
+		<p id="text">Legend: Green-Subject, Blue-Domain, Purple-Cluster, Yellow-Standard</p>
+	</div>
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
 
@@ -11,8 +20,8 @@
 		var qualifier = "http://purl.org/gem/qualifiers/"
 		var dc = "http://purl.org/dc/terms/"
 		var canvas = d3.select("body").append("svg")
-						.attr("width", "100%")
-						.attr("height", 1050)
+						.attr("width", 1000)
+						.attr("height", 1000)
 
 		var t1 = {};
 		var s1 = {};
@@ -708,5 +717,12 @@
 	loadCollection("t1.json", 700, 200);
 	loadCollection("t2.json", 700, 900);
 	</script>
+
+	<!--buttons-->
+	<div id="buttons">
+	<button id="math">M</button>
+	<button id="english">E</button>
+	</div>
+	<!---->
 </body>
 </html>
