@@ -19,14 +19,13 @@
 
 	<!--buttons-->
 	<div id="buttons">
-	<button id="math">M</button>
-	<button id="english">E</button>
+	<button id="math" onclick="showText1('#math','#6a0027','#english','#709898')">M</button>
+	<button id="english" onclick="showText1('#english','#709898','#math','#6a0027')">E</button>
 	</div>
 	<!---->
 	</body>
 	<script>
 	function showText1(subjectSelected, colorSelected, subjectUnselected, colorUnselected){
-		console.log(d3.select("body").select(subjectSelected))
 		d3.select("body").select(subjectSelected)
 			.style("background-color","#fff")
 			.style("color",colorSelected)
@@ -36,10 +35,7 @@
 			.style("color","#fff")
 			.style("border-color","#fff");
 	}
-
-	d3.selectAll("body").select("#buttons").select("#math").on("click", function(){showText1("#math","#6a0027", "#english","#709898")});
-	d3.selectAll("body").select("#buttons").select("#english").on("click", function(){showText1("#english","#709898","#math","#6a0027")});
-
+	
 
 	function loadSubject(coreCollection, sub1, sub2){
 		d3.select("body").selectAll("svg").remove();
@@ -49,8 +45,7 @@
 		var elements = "http://purl.org/dc/elements/1.1/"
 		var canvas = d3.select("#svg").append("svg")
 						.attr("width", 1100)
-						.attr("height", 1050)
-						/*.attr("transform", "translate(0,50)")*/
+						.attr("height", 1050);
 
 		var t1 = {};
 		var s1 = {};
@@ -102,7 +97,9 @@
 
 	function printText(root, data,index){
 		var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/";
-		console.log(data);
+		console.log(root[index][data["target"]]);
+		console.log(index);
+		console.log(data["target"])
 		result = root[index][data["target"]][dc + "description"][0]["value"] + "\n" + "Education Level: "
 		for (x in root[index][data["target"]][dc + "educationLevel"]){
 			appending = root[index][data["target"]][dc+ "educationLevel"][x]["value"].replace(junk, "");
@@ -111,7 +108,19 @@
 		if (root[index][data["target"]].hasOwnProperty(core+"statementLabel")){
 			result = result + "\n" + "Level: " + root[index][data["target"]][core + "statementLabel"][0]["value"];
 		}
-		var n = 1;
+		var chain = [];
+		data2 = data["target"]
+		while (root[index][data2].hasOwnProperty(qualifier + "isChildOf")){
+			chain.push(root[index][data2][dc+"description"][0]["value"]);
+			data2 = root[index][data2][qualifier + "isChildOf"][0]["value"];
+		}
+		chain.push(root[index][data2][elements+ "title"][0]["value"]);
+		result = result + "\n" + "Location: " + chain[chain.length-1]
+		for (var i = chain.length-2; i>=0; i--){
+			result = result + "-->" + chain[i] ;
+		}
+		return result;
+		/*var n = 1;
 		var importantkey = null;
 		for (x in root[index]){
 			if (n==2){
@@ -120,10 +129,8 @@
 			}
 			n++;
 		}
-		console.log(importantkey);
 		result = result + "\n" + "Collection: " + root[index][importantkey][elements+"title"][0]["value"];
-		console.log(result);
-		return result;
+		return result;*/
 	}
 
 	function crosswalks(collection, d) {
@@ -135,10 +142,6 @@
 		else{
 			var root = [roots[sub1], roots[sub2]];
 		}
-		console.log(reference);
-		console.log(collection);
-		console.log(source);
-		console.log(root);
 		crosswalk.selectAll("g").remove();
 		if (source.hasOwnProperty(d)){
 			var array = source[d];
@@ -208,20 +211,33 @@
 			.attr("stroke-width", "1.7px")
 			.attr("expanded", false)
 			.on("click", function(d) {
-				console.log(this.getAttribute("expanded"));
 				if (this.getAttribute("expanded") == "false") {
 					this.setAttribute("expanded", true); 
 					displayDomains()
-					console.log("Here")
 				}
 				else{
-					console.log("hi");
 					svg.selectAll("g").transition().duration(800).attr("transform", "translate(0)");
 					setTimeout(function(){svg.selectAll("g").remove()}, 600);
 					svg.selectAll("path").remove();
 					this.setAttribute("expanded", false);
 				}
-			});
+			})
+			.append("title")
+				.text(function(){
+					var titleKey = null;
+					var n = 0;
+					for (x in root) {
+						if (n < 1){
+							n++;
+						}
+						else{
+							titleKey = x;
+							break;
+						}
+					}
+					return root[x][elements + "title"][0]["value"]
+				});
+			
 
 
 		var Domains = [];
@@ -236,7 +252,6 @@
 			count ++;
 		}
 
-		console.log(Domains);
 		var surroundings = [];
 
 		for (i in Domains){
@@ -249,6 +264,30 @@
 		var maxAngle = 0;
 		var minAngle = 0;
 		var nodeRadius = 60;
+
+		function printTextInner(data){
+			var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/";
+			result = root[data][dc + "description"][0]["value"] + "\n" + "Education Level: "
+			for (x in root[data][dc + "educationLevel"]){
+				appending = root[data][dc+ "educationLevel"][x]["value"].replace(junk, "");
+				result = result + appending + ", ";
+			} ;
+			if (root[data].hasOwnProperty(core+"statementLabel")){
+				result = result + "\n" + "Level: " + root[data][core + "statementLabel"][0]["value"];
+			}
+			var n = 1;
+			var importantkey = null;
+			for (x in root){
+				if (n==2){
+					importantkey = x;
+					break;
+				}
+				n++;
+			
+			}
+			result = result + "\n" + "Collection: " + root[importantkey][elements+"title"][0]["value"];
+			return result;
+		}
 		
 		function displayDomains(){
 
@@ -318,13 +357,7 @@
 			returnPositions();
 			circles.append("title")
 					.text(function(d){
-						var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
-						result = root[d][dc + "description"][0]["value"] + "\n" + "Education Level: "
-						for (x in root[d][dc + "educationLevel"]){
-							appending = root[d][dc+ "educationLevel"][x]["value"].replace(junk, "");
-							result = result + appending + ", ";
-						} ;
-						return result;
+						return printTextInner(d);
 					})
 			circles
 				.attr("fill", "#fff")
@@ -347,7 +380,6 @@
 
 
 			function shiftCircles(d,i,baseRotate) {
-				console.log(baseRotate);
 				surroundings = [];
 				for (n in Domains){
 					var pushObject = {"Level": 2, "data": Domains[n]}
@@ -355,7 +387,6 @@
 				}
 				nodeDistance= 180/surroundings.length;
 				baseRotate = 2*nodeDistance * i;
-				console.log(baseRotate);
 				target = d3.transform("rotate(" + baseRotate + ")translate(" + nodeRadius +")").translate;
 				targetOffset = d3.transform("rotate(" + baseRotate + ")translate(8)").translate;
 				var newPath = svg.append("path")
@@ -418,8 +449,7 @@
 			var node2 = svg.selectAll("Level" + coeff)
 				.data(children)
 				.enter()
-			var parentCircle = svg.selectAll("g").filter(function(d){return d===parent});
-			console.log(surroundings);		
+			var parentCircle = svg.selectAll("g").filter(function(d){return d===parent});	
 			var unnecessary = svg.selectAll("g").filter(function(d){return this.getAttribute("Level") > coeff-1})
 				.remove();
 			var unnecessary2 = svg.selectAll("path").filter(function(d){
@@ -460,7 +490,6 @@
 					.attr("stroke-dashoffset", 0);
 			}
 			setTimeout(function(){return paths()}, 500);
-			console.log(paths);
 
 			var circles = backgrounds.append("circle")
 					.attr("stroke", function(d){
@@ -492,13 +521,7 @@
 				.attr("stroke-width", "1.7px");
 			circles.append("title")
 					.text(function(d,i){
-									var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/"
-									result = root[d][dc + "description"][0]["value"] + "\n" + "Education Level: "
-									for (x in root[d][dc + "educationLevel"]){
-										appending = root[d][dc+ "educationLevel"][x]["value"].replace(junk, "");
-										result = result + appending + ", ";
-									} ;
-									return result;
+									return printTextInner(d);
 								});
 			
 			function drawPrevious(d,i){
