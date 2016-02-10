@@ -2,29 +2,38 @@
 <!DOCTYPE html>
 <html lang="en" >
 <head>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<link type="text/css" rel="stylesheet" href="style.css">
 	<link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
 </head>
 <body>
 	<h1 id="title">Educational Standards</h1>
 		<!--instructions-->
-	<div id="instructions">
+	<!--<div id="instructions">
 		<p id="text">To expand node, click on it.</p>
 		<p id="text">To see crosswalks, select a node by clicking on it again.</p>
 		<p id="text">To see more information about any node, hover your mouse over the node.</p>
-	</div>
-	<div id="svg">
-	<script src="http://d3js.org/d3.v3.min.js"></script>
-	</div>
-
+	</div>-->
+	
+	
+	
 	<!--buttons-->
 	<div id="buttons">
 	<button id="math" onclick="showText1('#math','#6a0027','#english','#709898')">M</button>
 	<button id="english" onclick="showText1('#english','#709898','#math','#6a0027')">E</button>
 	</div>
+	<div id="svg">
+	</div>
 	<!---->
 	</body>
 	<script>
+	var url = window.location.href;
+	if (url.indexOf('?') == -1){
+		url = url + "?" + Math.floor(Math.random()*1000);
+		window.location.href = url;
+	}
+	
+
 	function showText1(subjectSelected, colorSelected, subjectUnselected, colorUnselected){
 		d3.select("body").select(subjectSelected)
 			.style("background-color","#fff")
@@ -50,7 +59,7 @@
 		var t1 = {};
 		var s1 = {};
 		var t2 = {};
-		function loadCSV(file, first, second){
+		function loadCSV(file, first, second, callback){
 			d3.csv(file)
 					.row(function(d){ 
 						return {"from" : d.subjectURI, "to" : d.objectURI, "fromNotation" : d.subjectNotation, "toNotation": d.objectNotation}})
@@ -97,9 +106,6 @@
 
 	function printText(root, data,index){
 		var junk = "http://purl.org/ASN/scheme/ASNEducationLevel/";
-		console.log(root[index][data["target"]]);
-		console.log(index);
-		console.log(data["target"])
 		result = root[index][data["target"]][dc + "description"][0]["value"] + "\n" + "Education Level: "
 		for (x in root[index][data["target"]][dc + "educationLevel"]){
 			appending = root[index][data["target"]][dc+ "educationLevel"][x]["value"].replace(junk, "");
@@ -120,17 +126,6 @@
 			result = result + "-->" + chain[i] ;
 		}
 		return result;
-		/*var n = 1;
-		var importantkey = null;
-		for (x in root[index]){
-			if (n==2){
-				importantkey = x;
-				break;
-			}
-			n++;
-		}
-		result = result + "\n" + "Collection: " + root[index][importantkey][elements+"title"][0]["value"];
-		return result;*/
 	}
 
 	function crosswalks(collection, d) {
@@ -196,10 +191,11 @@
 			var relatedCrosswalk = [];
 			var theseWalks = reference[collection];
 			for (i in theseWalks){
-				var x = i;
-				while (root[x].hasOwnProperty(qualifier + "isChildOf")){
-					relatedCrosswalk.push(x);
-					x = root[x][qualifier + "isChildOf"][0]["value"];
+				if (root.hasOwnProperty(i)){
+					while (root[i].hasOwnProperty(qualifier + "isChildOf")){
+						relatedCrosswalk.push(i);
+						i = root[i][qualifier + "isChildOf"][0]["value"];
+					}
 				}
 			}
 
@@ -367,7 +363,7 @@
 				.duration(1000)	
 				.attr("r",8)
 				.attr("stroke", function(d){
-					if (relatedCrosswalk.indexOf(d) > -1) {
+					if (relatedCrosswalk.indexOf(d) != -1) {
 						return "#fff";
 					}
 					else{
@@ -625,7 +621,7 @@
 		});
 	}
 
-	loadCollection(coreCollection, 300, 550);
+	loadCollection(coreCollection, 250, 550);
 	loadCollection(sub1, 650, 200);
 	loadCollection(sub2, 650, 900);
 }
